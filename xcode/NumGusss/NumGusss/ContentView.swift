@@ -66,26 +66,21 @@ struct ContentView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                Color(NSColor.windowBackgroundColor)
-                    .ignoresSafeArea()
-                
-                VStack {
-                    Group {
-                        if maxNumber == nil {
-                            rangeInputView
-                        } else if isShuffling {
-                            shuffleView
-                        } else {
-                            guessingView
-                        }
+            VStack {
+                Group {
+                    if maxNumber == nil {
+                        rangeInputView
+                    } else if isShuffling {
+                        shuffleView
+                    } else {
+                        guessingView
                     }
                 }
-                .padding(20)
-                .frame(width: 380, height: 500)
             }
-            .navigationTitle("숫자 맞추기")
+            .padding(20)
         }
+        .frame(width: 400, height: 520)
+        .background(Color(NSColor.windowBackgroundColor))
         .sheet(isPresented: $showCongrats) {
             congratsView
         }
@@ -114,6 +109,7 @@ struct ContentView: View {
                     Text("1부터 최대값 (10이상) 사이의 숫자를 맞춰보세요.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
                 }
             }
 
@@ -126,7 +122,7 @@ struct ContentView: View {
                     ZStack {
                         RoundedRectangle(cornerRadius: 16, style: .continuous)
                             .fill(.ultraThinMaterial)
-                            .frame(width: 100, height: 50)
+                            .frame(width: 120, height: 50)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 16).strokeBorder(Color.primary.opacity(0.1), lineWidth: 1)
                             )
@@ -135,7 +131,7 @@ struct ContentView: View {
                             .multilineTextAlignment(.center)
                             .textFieldStyle(PlainTextFieldStyle())
                             .font(.title2.bold())
-                            .frame(width: 80)
+                            .frame(width: 100)
                             .onSubmit {
                                 if isValidMaxInput { startShuffleIfValid() }
                             }
@@ -143,7 +139,7 @@ struct ContentView: View {
                 }
                 
                 if !maxText.isEmpty && !isValidMaxInput {
-                    Text("10 이상의 숫자를 입력하세요.")
+                    Text("10 이상 99,999 이하의 숫자를 입력하세요.")
                         .foregroundStyle(.red)
                         .font(.caption)
                 }
@@ -169,7 +165,11 @@ struct ContentView: View {
         }
         .onChange(of: maxText) { _, newValue in
             let filtered = newValue.filter { $0.isNumber }
-            if filtered != newValue { maxText = filtered }
+            if filtered.count > 5 {
+                maxText = String(filtered.prefix(5))
+            } else if filtered != newValue {
+                maxText = filtered
+            }
         }
         .onAppear {
             isTextFieldFocused = true
@@ -195,6 +195,9 @@ struct ContentView: View {
                     .font(.system(size: 64, weight: .heavy, design: .rounded))
                     .monospacedDigit()
                     .foregroundStyle(LinearGradient(colors: [.blue, .purple], startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                    .padding(.horizontal, 10)
                     .rotationEffect(shuffleAngle)
                     .animation(.spring(response: 0.25, dampingFraction: 0.6), value: shuffleAngle)
             }
@@ -231,16 +234,19 @@ struct ContentView: View {
                         .foregroundStyle(.blue)
                         .id(currentFunMessage) // Ensure animation triggers on change
                         .transition(.push(from: .top))
+                        .multilineTextAlignment(.center)
                 }
             }
             .padding(.bottom, 50)
 
             // Your layout idea: LowBound < InputField < HighBound
-            HStack(alignment: .center, spacing: 12) {
+            HStack(alignment: .center, spacing: 8) {
                 Text("\(lowBound)")
                     .font(.system(size: 32, weight: .bold, design: .rounded))
                     .foregroundStyle(.blue)
-                    .frame(minWidth: 50)
+                    .frame(minWidth: 40, maxWidth: 80)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
                 
                 Text(isLowInclusive ? "≤" : "<")
                     .font(.system(size: 36, weight: .black))
@@ -249,7 +255,7 @@ struct ContentView: View {
                 ZStack {
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
                         .fill(.ultraThinMaterial)
-                        .frame(width: 120, height: 70)
+                        .frame(width: 140, height: 70)
                         .overlay(
                             RoundedRectangle(cornerRadius: 16).strokeBorder(LinearGradient(colors: [.blue.opacity(0.5), .purple.opacity(0.5)], startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 2)
                         )
@@ -259,7 +265,7 @@ struct ContentView: View {
                         .multilineTextAlignment(.center)
                         .textFieldStyle(PlainTextFieldStyle())
                         .font(.system(size: 36, weight: .bold, design: .rounded))
-                        .frame(width: 100)
+                        .frame(width: 120)
                         .onSubmit {
                             if isValidGuessInput { submitGuess() }
                         }
@@ -272,7 +278,9 @@ struct ContentView: View {
                 Text("\(highBound)")
                     .font(.system(size: 32, weight: .bold, design: .rounded))
                     .foregroundStyle(.orange)
-                    .frame(minWidth: 50)
+                    .frame(minWidth: 40, maxWidth: 80)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
             }
             
             // Feedback
@@ -333,6 +341,14 @@ struct ContentView: View {
         .onAppear {
             isTextFieldFocused = true
             currentFunMessage = funMessages.randomElement() ?? "행운을 빌어요! 🍀"
+        }
+        .onChange(of: guessText) { _, newValue in
+            let filtered = newValue.filter { $0.isNumber }
+            if filtered.count > 5 {
+                guessText = String(filtered.prefix(5))
+            } else if filtered != newValue {
+                guessText = filtered
+            }
         }
     }
 
@@ -425,7 +441,7 @@ struct ContentView: View {
     // MARK: - Logic
 
     private var isValidMaxInput: Bool {
-        if let n = Int(maxText), n >= 10 { return true }
+        if let n = Int(maxText), n >= 10 && n <= 99999 { return true }
         return false
     }
 
