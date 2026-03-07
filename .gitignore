@@ -1,0 +1,11 @@
+# --- Xcode ---
+build/
+DerivedData/
+*.xcuserdata
+*.xcuserstate
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.pvr
+*.ipa
+
